@@ -6,7 +6,6 @@ import {
 } from '../common/constants/stocks.constant';
 import { StocksService } from '../stocks/stocks.service';
 import { NewsService } from '../news/news.service';
-import { AiService } from '../ai/ai.service';
 
 export interface StockSuggestionItem {
   stock: string;
@@ -15,7 +14,9 @@ export interface StockSuggestionItem {
   suggestedInvestment: number;
   quantity: number;
   price: number;
-  aiInsight: string;
+  changePercent: number;
+  sentiment: 'Positive' | 'Negative' | 'Neutral';
+  preview: string;
 }
 
 export interface SuggestionResponse {
@@ -32,7 +33,6 @@ export class SuggestionsService {
   constructor(
     private readonly stocksService: StocksService,
     private readonly newsService: NewsService,
-    private readonly aiService: AiService,
   ) {}
 
   async generateSuggestions(
@@ -54,14 +54,12 @@ export class SuggestionsService {
       const perStockBudget = categoryBudget / stocks.length;
 
       for (const stock of stocks) {
-        const price = await this.stocksService.getLatestPrice(stock.symbol);
-        const quantity = Math.floor(perStockBudget / price);
-        const suggestedInvestment = quantity * price;
-        const news = await this.newsService.getNewsBySymbol(stock.symbol, 5);
-        const aiInsight = await this.aiService.generateStockInsight(
-          stock.symbol,
-          news,
-        );
+        const quote = await this.stocksService.getQuote(stock.symbol);
+        const quantity = Math.floor(perStockBudget / quote.price);
+        const suggestedInvestment = quantity * quote.price;
+        const news = await this.newsService.getNewsBySymbol(stock.symbol, 3);
+        const sentiment = this.stocksService.getSentimentFromNews(news);
+        const preview = this.stocksService.getQuickPreview(news, sentiment);
 
         suggestions.push({
           stock: stock.symbol,
@@ -69,8 +67,10 @@ export class SuggestionsService {
           category,
           suggestedInvestment,
           quantity,
-          price,
-          aiInsight,
+          price: quote.price,
+          changePercent: quote.changePercent,
+          sentiment,
+          preview,
         });
       }
     }
@@ -81,7 +81,7 @@ export class SuggestionsService {
       allocation,
       allocationAmounts,
       disclaimer:
-        'These are educational suggestions only, not financial advice. Past performance does not guarantee future results.',
+        'These are educational suggestions only, not financial advice. Tap a stock for full analysis.',
       suggestions,
     };
   }

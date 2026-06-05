@@ -1,0 +1,26 @@
+# Optional: Render Blueprint (deploy from repo root with backend/ + db)
+services:
+  - type: web
+    name: stock-suggestion-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run render:build
+    startCommand: npm run render:start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stock-suggestion-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: stock-suggestion-db
+    plan: free
+    databaseName: stock_suggestion
+    user: stock_suggestion
