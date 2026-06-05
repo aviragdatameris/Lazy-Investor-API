@@ -34,8 +34,8 @@
 | **Region** | Same as database |
 | **Root Directory** | `backend` |
 | **Runtime** | Node |
-| **Build Command** | `npm install && npm run render:build` |
-| **Start Command** | `npm run render:start` |
+| **Build Command** | `npm install && npm run build` |
+| **Start Command** | `npm start` |
 | **Health Check Path** | `/health` |
 
 4. **Environment** → Add variables:
